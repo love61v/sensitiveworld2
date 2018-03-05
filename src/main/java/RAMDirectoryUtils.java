@@ -15,7 +15,7 @@ public class RAMDirectoryUtils {
         return RAMDirectoryHolder.DIRECTORY;
     }
 
-    static class RAMDirectoryHolder {
+    private static class RAMDirectoryHolder {
         private static RAMDirectory DIRECTORY = new RAMDirectory();
     }
 }

@@ -6,6 +6,9 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.RAMDirectory;
@@ -22,8 +25,7 @@ import java.util.Optional;
  **/
 public class LuceneUtils {
 
-
-    private static final String FIELD_NAME = "sensitiveWord";
+    public static final String FIELD_NAME = "sensitiveWord";
     private static final RAMDirectory directory = RAMDirectoryUtils.getRAMDirectoryInstance();
 
     /**
@@ -64,7 +66,14 @@ public class LuceneUtils {
             SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer();
 
             for (String word : wordsLib) {
-                Query query = new QueryBuilder(analyzer).createBooleanQuery(FIELD_NAME, word);
+
+                QueryParser parser = new ComplexPhraseQueryParser(FIELD_NAME, analyzer);
+                Query query = null;
+                try {
+                    query = parser.parse("+(代驾 整车) AND (快递 保险) AND (服务 提供)");
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
                 Highlighter highlighter = createHighlighter(query);
 
                 TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);

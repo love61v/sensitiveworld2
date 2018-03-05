@@ -19,6 +19,12 @@
             <artifactId>lucene-analyzers-common</artifactId>
             <version>7.2.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>7.2.1</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.lucene</groupId>
@@ -30,19 +36,23 @@
             <artifactId>lucene-highlighter</artifactId>
             <version>7.2.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.janeluo</groupId>
-            <artifactId>ikanalyzer</artifactId>
-            <version>2012_u6</version>
-        </dependency>
-
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.2.46</version>
         </dependency>
-
-
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
