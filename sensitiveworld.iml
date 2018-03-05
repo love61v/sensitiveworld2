@@ -19,6 +19,9 @@
     <orderEntry type="library" name="Maven: org.apache.lucene:lucene-join:7.2.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.lucene:lucene-memory:7.2.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.lucene:lucene-queries:7.2.1" level="project" />
+    <orderEntry type="library" name="Maven: com.janeluo:ikanalyzer:2012_u6" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.lucene:lucene-queryparser:4.7.2" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.lucene:lucene-sandbox:4.7.2" level="project" />
     <orderEntry type="library" name="Maven: com.alibaba:fastjson:1.2.46" level="project" />
   </component>
   <component name="sonarModuleSettings">

@@ -6,10 +6,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.QueryBuilder;
@@ -17,6 +14,7 @@ import org.apache.lucene.util.QueryBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Date: 2018-03-03 下午10:42
@@ -76,8 +74,8 @@ public class LuceneUtils {
                     String str = doc.get(FIELD_NAME);
 
                     // 高亮
-                    String result = hightlight(highlighter, analyzer, FIELD_NAME, str);
-                    list.add(result);
+                    Optional<String> result = hightlight(highlighter, analyzer, FIELD_NAME, str);
+                    list.add(result.orElse(null));
                 }
             }
 
@@ -108,14 +106,15 @@ public class LuceneUtils {
      * @param plain
      * @return
      */
-    private static String hightlight(Highlighter highlighter, Analyzer analyzer, String fieldName, String plain) {
+    private static Optional<String> hightlight(Highlighter highlighter, Analyzer analyzer, String fieldName, String plain) {
+        String result = null;
+
         try {
-            String result = highlighter.getBestFragment(analyzer.tokenStream(fieldName, plain), plain);
-            return result == null ? plain : result;
+            result = highlighter.getBestFragment(analyzer.tokenStream(fieldName, plain), plain);
         } catch (IOException | InvalidTokenOffsetsException e) {
             e.printStackTrace();
         }
 
-        return null;
+        return Optional.ofNullable(result == null ? plain : result);
     }
 }
