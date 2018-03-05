@@ -66,18 +66,16 @@ public class LuceneUtils {
             SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer();
 
             for (String word : wordsLib) {
-
                 QueryParser parser = new ComplexPhraseQueryParser(FIELD_NAME, analyzer);
-                Query query = null;
-                try {
-                    query = parser.parse("+(代驾 整车) AND (快递 保险) AND (服务 提供)");
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                Query query = parser.parse(word);
                 Highlighter highlighter = createHighlighter(query);
 
                 TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
-                System.out.println("命中数量: " + topDocs.totalHits);
+                long totalHits = topDocs.totalHits;
+                System.out.println("命中数量: " + totalHits);
+                if (totalHits == 0) {
+                    continue;
+                }
                 for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
                     Document doc = searcher.doc(scoreDoc.doc);
                     String str = doc.get(FIELD_NAME);
@@ -89,7 +87,7 @@ public class LuceneUtils {
             }
 
 
-        } catch (IOException e) {
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
 
