@@ -20,25 +20,28 @@ public class SensitiveWordFilterUtils {
             "(会员 用户) AND (订单 调查 评价 付费) AND (参加 优质 获得 发布)",
             "(投递 人脉) AND (好友 岗位 月薪) AND (查收 推荐 面议 房补)",
             "(投递) AND (工作) AND (职位 月薪)",
-            "(真票 服务 真发 曾拾) AND (机打 需电 坻扣 代开)",
             "(信一誉 信誉 记录) AND (良好 特好) AND (工作 酬薪 聘请)",
             "(一肖) AND (群内) AND (荍费 无费)",
             "(年级 培优 上课) AND (补习 老师 晚托) AND (满分 费用 解析 作业 开设)",
             "(评估 审核) AND (额度 初审 线上) AND (申请 收款 通过)",
             "(龙门娱乐) AND (在线 百家乐) AND (送)",
             "(永利 皇宫) AND (免费 诚邀) AND (奖赏 获)",
-            "(代驾 整车) AND (快递 保险) AND (服务 提供)"
+            "(真票 服务 真发 曾拾) AND (机打 需电 坻扣 代开)",
+            "(代驾 OR 整车) AND (快递 OR 保险) AND (服务 OR 提供)"
     };
 
+    public static void main(String[] args) {
+        String content = "提x供保x险我爱北京,代x驾服务特别需电好评价,当然快x递也快，都是整x车的送到家体检报告,真是提x供了便x利孩x子啊";
+        test(content);
+    }
+
     public static String doFilter(String plainText, String... wordsLib) {
-
         List<String> resultList = LuceneUtils.getHightlightStr(plainText, wordsLib);
-        System.out.println("匹配关键字高亮结果: " + JSON.toJSONString(resultList));
-
         return Optional.ofNullable(resultList)
-                       .orElse(new ArrayList<>()).stream()
-                       .findFirst()
+                       .orElse(new ArrayList<>())
+                       .stream()
                        .map(str -> replaceSensitiveWord(str))
+                       .findFirst()
                        .orElse(plainText);
     }
 
@@ -46,10 +49,6 @@ public class SensitiveWordFilterUtils {
         return Optional.ofNullable(str).orElse("").replaceAll("<b>.*?</b>", "*");
     }
 
-    public static void main(String[] args) {
-        String content = "我爱北京,代驾服务特别好,当然快递也快，都是整车的送到家,真是提供了便利孩子啊";
-        test(content);
-    }
 
     private static void test(String content) {
         long now = System.currentTimeMillis();
@@ -57,7 +56,6 @@ public class SensitiveWordFilterUtils {
         String result = doFilter(content, words);
 
         long time = (System.currentTimeMillis() - now);
-        System.out.println(String.format("过滤后为", time / 1000));
-        System.out.println(result);
+        System.out.println(String.format("过滤用时%s,结果:\n%s", time / 1000, result));
     }
 }
