@@ -1,22 +1,24 @@
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
-import org.apache.lucene.queryparser.flexible.standard.builders.StandardQueryBuilder;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.util.QueryBuilder;
+import org.apache.lucene.util.Version;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,13 +31,13 @@ public class LuceneUtils {
 
     public static final String FIELD_NAME = "sensitiveWord";
     private static final RAMDirectory directory = RAMDirectoryUtils.getRAMDirectoryInstance();
+    private static final IndexWriterConfig writerConfig = new IndexWriterConfig(Version.LUCENE_43, new IKAnalyzer());
 
     /**
      * 系统启动后就生成索引到内存
      */
     public static void createIndex(String content) {
         try {
-            IndexWriterConfig writerConfig = new IndexWriterConfig(new SmartChineseAnalyzer());
             IndexWriter indexWriter = new IndexWriter(directory, writerConfig);
             Document doc = new Document();
             doc.add(new Field(FIELD_NAME, content, TextField.TYPE_STORED));
@@ -46,6 +48,22 @@ public class LuceneUtils {
             e.printStackTrace();
         }
     }
+
+    public static void updateIndex(String content) {
+        try {
+            IndexWriter indexWriter = new IndexWriter(directory, writerConfig);
+            Document doc = new Document();
+            doc.add(new Field(FIELD_NAME, content, TextField.TYPE_STORED));
+            indexWriter.deleteAll();
+            indexWriter.commit();
+            indexWriter.updateDocument(new Term(FIELD_NAME), doc);
+            indexWriter.commit();
+            indexWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * 获取高亮关键词后的结果
@@ -61,15 +79,16 @@ public class LuceneUtils {
 
     public static List<String> search(String queryTxt, String... wordsLib) {
         List<String> list = new ArrayList<>();
+        String resultTxt = queryTxt;
 
         try {
-            DirectoryReader directoryReader = DirectoryReader.open(directory);
-            IndexSearcher searcher = new IndexSearcher(directoryReader);
-            SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer();
-            //StandardAnalyzer analyzer = new StandardAnalyzer();
-
             for (String word : wordsLib) {
-                QueryParser parser = new ComplexPhraseQueryParser(FIELD_NAME, analyzer);
+                DirectoryReader directoryReader = DirectoryReader.open(directory);
+                IndexSearcher searcher = new IndexSearcher(directoryReader);
+                IKAnalyzer analyzer = new IKAnalyzer();
+
+                QueryParser parser = new QueryParser(Version.LUCENE_43, FIELD_NAME, analyzer);
+                parser.setDefaultOperator(QueryParser.Operator.AND);
                 Query query = parser.parse(word);
                 Highlighter highlighter = createHighlighter(query);
 
@@ -78,24 +97,30 @@ public class LuceneUtils {
                 if (totalHits == 0) {
                     continue;
                 }
+
                 System.out.println("命中数量: " + totalHits);
                 for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                    System.out.println("score=" + scoreDoc.score);
                     Document doc = searcher.doc(scoreDoc.doc);
                     String str = doc.get(FIELD_NAME);
 
                     // 高亮
                     Optional<String> result = hightlight(highlighter, analyzer, FIELD_NAME, str);
-                    list.add(result.orElse(null));
+                    System.out.println("高亮: " + result.orElse(""));
+                    resultTxt = replaceSensitiveWord(result.get());
+                    updateIndex(resultTxt);
+                    System.out.println("====新索引:" + resultTxt);
                 }
             }
-
-
+            list.add(resultTxt);
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
 
         return list;
+    }
+
+    private static String replaceSensitiveWord(String str) {
+        return Optional.ofNullable(str).orElse("").replaceAll("<b>.*?</b>", "");
     }
 
 
@@ -121,7 +146,7 @@ public class LuceneUtils {
         String result = null;
 
         try {
-            result = highlighter.getBestFragment(analyzer.tokenStream(fieldName, plain), plain);
+            result = highlighter.getBestFragment(analyzer.tokenStream(fieldName, new StringReader(plain)), plain);
         } catch (IOException | InvalidTokenOffsetsException e) {
             e.printStackTrace();
         }
