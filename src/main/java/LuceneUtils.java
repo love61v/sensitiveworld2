@@ -1,5 +1,6 @@
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
@@ -9,6 +10,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
+import org.apache.lucene.queryparser.flexible.standard.builders.StandardQueryBuilder;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.RAMDirectory;
@@ -64,6 +66,7 @@ public class LuceneUtils {
             DirectoryReader directoryReader = DirectoryReader.open(directory);
             IndexSearcher searcher = new IndexSearcher(directoryReader);
             SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer();
+            //StandardAnalyzer analyzer = new StandardAnalyzer();
 
             for (String word : wordsLib) {
                 QueryParser parser = new ComplexPhraseQueryParser(FIELD_NAME, analyzer);
@@ -72,11 +75,12 @@ public class LuceneUtils {
 
                 TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
                 long totalHits = topDocs.totalHits;
-                System.out.println("命中数量: " + totalHits);
                 if (totalHits == 0) {
                     continue;
                 }
+                System.out.println("命中数量: " + totalHits);
                 for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                    System.out.println("score=" + scoreDoc.score);
                     Document doc = searcher.doc(scoreDoc.doc);
                     String str = doc.get(FIELD_NAME);
 
