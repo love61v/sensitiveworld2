@@ -31,7 +31,7 @@ public class SensitiveWordFilterUtils {
     };
 
     public static void main(String[] args) {
-        String content = "提x供保x险我爱北京,代x驾服务特别需电好评价,当然快x递也快，都是整x车的送到家体检报告,真是提x供了便x利孩x子啊";
+        String content = "提供保险我爱北京,代驾服务特别需电好评价,当然快递也快，都是整车的送到家体检报告,真是提供了便利孩子啊";
         test(content);
     }
 
