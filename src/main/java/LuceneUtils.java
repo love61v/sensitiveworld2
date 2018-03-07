@@ -64,6 +64,17 @@ public class LuceneUtils {
         }
     }
 
+    public static void clearAll() {
+        try {
+            IndexWriter indexWriter = new IndexWriter(directory, writerConfig);
+            indexWriter.deleteAll();
+            indexWriter.commit();
+            indexWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * 获取高亮关键词后的结果
@@ -80,7 +91,7 @@ public class LuceneUtils {
     public static List<String> search(String queryTxt, String... wordsLib) {
         List<String> list = new ArrayList<>();
         String resultTxt = queryTxt;
-
+        System.out.println(String.format("查询%s条关键词", wordsLib.length));
         try {
             for (String word : wordsLib) {
                 DirectoryReader directoryReader = DirectoryReader.open(directory);
@@ -90,42 +101,40 @@ public class LuceneUtils {
                 QueryParser parser = new QueryParser(Version.LUCENE_43, FIELD_NAME, analyzer);
                 parser.setDefaultOperator(QueryParser.Operator.AND);
                 Query query = parser.parse(word);
-                Highlighter highlighter = createHighlighter(query);
-
                 TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
                 long totalHits = topDocs.totalHits;
                 if (totalHits == 0) {
                     continue;
                 }
+                Highlighter highlighter = createHighlighter(query);
 
-                System.out.println("命中数量: " + totalHits);
                 for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
                     Document doc = searcher.doc(scoreDoc.doc);
                     String str = doc.get(FIELD_NAME);
 
                     // 高亮
                     Optional<String> result = hightlight(highlighter, analyzer, FIELD_NAME, str);
-                    System.out.println("高亮: " + result.orElse(""));
                     resultTxt = replaceSensitiveWord(result.get());
                     updateIndex(resultTxt);
-                    System.out.println("====新索引:" + resultTxt);
                 }
             }
             list.add(resultTxt);
         } catch (IOException | ParseException e) {
             e.printStackTrace();
+        } finally {
+            clearAll();
         }
 
         return list;
     }
 
     private static String replaceSensitiveWord(String str) {
-        return Optional.ofNullable(str).orElse("").replaceAll("<b>.*?</b>", "");
+        return Optional.ofNullable(str).orElse("").replaceAll("\\{.*?\\}", "*");
     }
 
 
     private static Highlighter createHighlighter(Query query) {
-        final Formatter formatter = new SimpleHTMLFormatter("<b>", "</b>");
+        final Formatter formatter = new SimpleHTMLFormatter("{", "}");
         QueryScorer queryScorer = new QueryScorer(query);
         Highlighter highlighter = new Highlighter(formatter, queryScorer);
         highlighter.setFragmentScorer(queryScorer);
